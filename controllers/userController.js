@@ -1,4 +1,5 @@
 const User = require("../models/User.js");
+const Course = require("../models/Course.js");
 
 // Add bcrypt dependency
 const bcrypt = require("bcrypt");
@@ -55,4 +56,47 @@ module.exports.getProfile = (data) => {
 	.then(result => {
 		return result;
 	})
+}
+
+//Use "async" because this function might take too long to respond since this uses 2DB
+module.exports.enroll = async (data) => {
+
+	// Adds the courseId in the User's enrollment array
+	let isUserUpdated = await User.findById(data.userId)
+	.then(user => {
+		user.enrollments.push({courseId : data.courseId});
+
+		return user.save()
+		.then((user, error) => {
+			if(error){
+				return false;
+			}else{
+				return true;
+			}
+		})
+	})
+
+	//Add the userId in the Course enrollees
+	let isCourseUpdated = await Course.findById(data.courseId)
+	.then(course => {
+		course.enrollees.push({userId: data.userId});
+
+		return course.save()
+		.then((course, error) => {
+			if(error){
+				return false;
+			}else{
+				return true;
+			}
+		})
+	})
+
+
+
+	// COMBINE: Check if both user and course was updated successfully
+	if(isUserUpdated && isCourseUpdated){
+		return true;
+	}else{
+		return false;
+	}
 }
